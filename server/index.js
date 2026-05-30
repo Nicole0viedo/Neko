@@ -336,7 +336,7 @@ const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
     fileSize: 10 * 1024 * 1024,
-    files: 4,
+    files: 2,
   },
   fileFilter: (_req, file, cb) => {
     const ok = ['image/jpeg', 'image/png', 'image/webp'].includes(file.mimetype)
@@ -349,7 +349,7 @@ app.post(
   rateLimit({ keyPrefix: 'cat-video', windowMs: 60 * 1000, max: 6 }),
   upload.fields([
     { name: 'brandLogo', maxCount: 1 },
-    { name: 'productImages', maxCount: 3 },
+    { name: 'productImages', maxCount: 1 },
   ]),
   async (req, res) => {
     try {
@@ -386,7 +386,7 @@ app.post(
       if (brandColors.some((c) => !isValidHex(c))) errors.push('Brand colors must be valid hex values.')
       if (!['16:9', '9:16', '1:1'].includes(aspectRatio)) errors.push('Invalid aspect ratio.')
       if (![5, 8].includes(duration)) errors.push('Invalid duration.')
-      if (productImages.length > 3) errors.push('Upload up to 3 product images.')
+      if (productImages.length > 1) errors.push('Upload up to 1 product image.')
 
       if (errors.length > 0) {
         res.status(400).json({ success: false, error: errors[0] })

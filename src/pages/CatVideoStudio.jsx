@@ -57,11 +57,11 @@ export default function CatVideoStudio() {
   const [touched, setTouched] = useState({})
   const [serverError, setServerError] = useState('')
   const [job, setJob] = useState(null)
-  const [polling, setPolling] = useState(false)
 
   const formRef = useRef(null)
   const pollTimerRef = useRef(null)
   const videoPanelRef = useRef(null)
+  const pollInFlightRef = useRef(false)
 
   const errors = useMemo(() => {
     const next = {}
@@ -83,7 +83,7 @@ export default function CatVideoStudio() {
     if (!aspectRatioOptions.some((o) => o.id === form.aspectRatio)) next.aspectRatio = 'Choose an aspect ratio.'
     if (!durationOptions.some((o) => o.id === form.duration)) next.duration = 'Choose a duration.'
 
-    if (form.productImages.length > 3) next.productImages = 'Upload up to 3 product images.'
+    if (form.productImages.length > 1) next.productImages = 'Upload up to 1 product image.'
     const productImageError = form.productImages.map((f) => fileIssue(f, { maxBytes: 10 * 1024 * 1024 })).find(Boolean)
     if (productImageError) next.productImages = productImageError
 
@@ -103,12 +103,13 @@ export default function CatVideoStudio() {
   }, [job?.status, job?.videoUrl])
 
   useEffect(() => {
-    if (!job?.id) return
-    if (job.status === 'done' || job.status === 'error') return
-    if (polling) return
+    if (!job?.id) return undefined
+    if (job.status === 'done' || job.status === 'error') return undefined
+    if (pollTimerRef.current) return undefined
 
-    setPolling(true)
     pollTimerRef.current = window.setInterval(async () => {
+      if (pollInFlightRef.current) return
+      pollInFlightRef.current = true
       try {
         const response = await fetch(`/api/cat-video/${job.id}`)
         const data = await response.json()
@@ -119,22 +120,22 @@ export default function CatVideoStudio() {
         if (data.job?.status === 'done' || data.job?.status === 'error') {
           window.clearInterval(pollTimerRef.current)
           pollTimerRef.current = null
-          setPolling(false)
         }
       } catch (e) {
         setServerError(e?.message || 'Something went wrong while checking progress.')
         window.clearInterval(pollTimerRef.current)
         pollTimerRef.current = null
-        setPolling(false)
+      } finally {
+        pollInFlightRef.current = false
       }
     }, 2000)
 
     return () => {
       if (pollTimerRef.current) window.clearInterval(pollTimerRef.current)
       pollTimerRef.current = null
-      setPolling(false)
+      pollInFlightRef.current = false
     }
-  }, [job?.id, job?.status, polling])
+  }, [job?.id, job?.status])
 
   const setField = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }))
@@ -452,7 +453,7 @@ export default function CatVideoStudio() {
                   </div>
 
                   <div className="mt-6">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Product Images (1–3 optional)</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Product Image (optional)</label>
                     <div
                       className={`rounded-lg border-2 border-dashed px-6 py-8 transition-colors ${
                         visibleError('productImages') ? 'border-red-300 bg-red-50' : 'border-gray-300 hover:border-primary/50'
@@ -469,22 +470,21 @@ export default function CatVideoStudio() {
                           </p>
                           <div className="mt-4 flex flex-wrap items-center gap-3">
                             <label className="rounded-lg bg-gray-900 px-3 py-2 text-xs font-semibold text-white hover:bg-gray-800 cursor-pointer">
-                              Upload images
+                              Upload image
                               <input
                                 type="file"
                                 accept={allowedImageTypes.join(',')}
-                                multiple
                                 className="sr-only"
                                 onBlur={() => markTouched('productImages')}
                                 onChange={(e) => {
-                                  const files = Array.from(e.target.files || []).slice(0, 3)
-                                  setField('productImages', files)
+                                  const file = e.target.files?.[0] || null
+                                  setField('productImages', file ? [file] : [])
                                 }}
                               />
                             </label>
                             {form.productImages.length > 0 && (
                               <span className="text-xs text-gray-600">
-                                {form.productImages.length} selected
+                                {form.productImages[0]?.name || '1 selected'}
                               </span>
                             )}
                           </div>
