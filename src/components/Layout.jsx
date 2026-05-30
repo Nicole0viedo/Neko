@@ -9,6 +9,7 @@ export default function Layout() {
   const navigation = [
     { name: 'Home', href: '/' },
     { name: 'Gallery', href: '/gallery' },
+    { name: 'Cat Video Studio', href: '/cat-video-studio' },
     { name: 'Pricing', href: '/pricing' },
     { name: 'Get Started', href: '/onboarding' },
   ]
@@ -102,7 +103,7 @@ export default function Layout() {
         <Outlet />
       </main>
 
-      <footer className="bg-gray-900 text-white">
+      <footer className="bg-ink text-cream">
         <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
             <div>
@@ -110,36 +111,36 @@ export default function Layout() {
                 <Cat className="h-6 w-6 text-primary" />
                 <span className="text-lg font-bold">Neko</span>
               </div>
-              <p className="text-sm text-gray-400">
+              <p className="text-sm text-cream/70">
                 Create custom advertising videos featuring your brand's unique cat mascot with AI-powered PixVerse technology.
               </p>
             </div>
             <div>
               <h3 className="text-sm font-semibold mb-4">Product</h3>
-              <ul className="space-y-2 text-sm text-gray-400">
-                <li><Link to="/gallery" className="hover:text-white">Gallery</Link></li>
-                <li><Link to="/pricing" className="hover:text-white">Pricing</Link></li>
-                <li><Link to="/onboarding" className="hover:text-white">Get Started</Link></li>
+              <ul className="space-y-2 text-sm text-cream/70">
+                <li><Link to="/gallery" className="hover:text-cream">Gallery</Link></li>
+                <li><Link to="/pricing" className="hover:text-cream">Pricing</Link></li>
+                <li><Link to="/onboarding" className="hover:text-cream">Get Started</Link></li>
               </ul>
             </div>
             <div>
               <h3 className="text-sm font-semibold mb-4">Company</h3>
-              <ul className="space-y-2 text-sm text-gray-400">
-                <li><a href="#" className="hover:text-white">About Us</a></li>
-                <li><a href="#" className="hover:text-white">Contact</a></li>
-                <li><a href="#" className="hover:text-white">Blog</a></li>
+              <ul className="space-y-2 text-sm text-cream/70">
+                <li><a href="#" className="hover:text-cream">About Us</a></li>
+                <li><a href="#" className="hover:text-cream">Contact</a></li>
+                <li><a href="#" className="hover:text-cream">Blog</a></li>
               </ul>
             </div>
             <div>
               <h3 className="text-sm font-semibold mb-4">Legal</h3>
-              <ul className="space-y-2 text-sm text-gray-400">
-                <li><a href="#" className="hover:text-white">Privacy Policy</a></li>
-                <li><a href="#" className="hover:text-white">Terms of Service</a></li>
-                <li><a href="#" className="hover:text-white">Cookie Policy</a></li>
+              <ul className="space-y-2 text-sm text-cream/70">
+                <li><a href="#" className="hover:text-cream">Privacy Policy</a></li>
+                <li><a href="#" className="hover:text-cream">Terms of Service</a></li>
+                <li><a href="#" className="hover:text-cream">Cookie Policy</a></li>
               </ul>
             </div>
           </div>
-          <div className="mt-8 border-t border-gray-800 pt-8 text-center text-sm text-gray-400">
+          <div className="mt-8 border-t border-cream/20 pt-8 text-center text-sm text-cream/60">
             <p>&copy; 2024 Neko Platform. All rights reserved. Powered by PixVerse.</p>
           </div>
         </div>

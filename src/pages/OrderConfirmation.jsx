@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { CheckCircle, Download, Calendar, Mail, ArrowRight, Sparkles } from 'lucide-react'
+import { CheckCircle, Calendar, Mail, ArrowRight, Sparkles } from 'lucide-react'
 
 const mockOrderDetails = {
   id: 'ORD-2024-001234',
@@ -16,7 +16,7 @@ export default function OrderConfirmation() {
   const order = mockOrderDetails
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
+    <div className="min-h-screen bg-base py-12">
       <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-8">
           <div className="mx-auto w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-4">

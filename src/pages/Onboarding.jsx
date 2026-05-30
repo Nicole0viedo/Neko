@@ -46,7 +46,7 @@ export default function Onboarding() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       })
-      const data = await response.json()
+      await response.json()
       navigate(`/checkout/basic`)
     } catch (error) {
       console.error('Submission error:', error)
@@ -57,7 +57,7 @@ export default function Onboarding() {
   const prevStep = () => setCurrentStep((s) => Math.max(s - 1, 1))
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
+    <div className="min-h-screen bg-base py-12">
       <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
           <Link to="/" className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 mb-4">

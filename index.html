@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/public/cat.svg" />
+    <link rel="icon" type="image/svg+xml" href="/cat.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Create custom product advertising videos featuring your brand's unique cat mascot with AI-powered PixVerse technology" />
     <title>Neko | Cat Mascot Ad Studio</title>
@@ -60,6 +60,10 @@
       .container {
         width: min(1120px, calc(100% - 32px));
         margin: 0 auto;
+      }
+
+      #static-fallback {
+        display: none;
       }
 
       .nav {
@@ -408,11 +412,14 @@
     </style>
   </head>
   <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+    <div id="static-fallback">
     <header class="nav">
       <div class="container nav-inner">
         <a class="brand" href="#top">
           <span class="brand-badge">
-            <img src="/public/cat.svg" alt="Neko cat mascot" />
+            <img src="/cat.svg" alt="Neko cat mascot" />
           </span>
           <span>
             <span class="brand-name">Neko</span>
@@ -582,5 +589,6 @@
       <p>Neko fallback preview page</p>
       <p>Powered by a static HTTP server workaround in this environment</p>
     </footer>
+    </div>
   </body>
 </html>

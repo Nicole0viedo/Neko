@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Play, Sparkles, Users, ShoppingCart, BarChart3, MessageCircle, Heart, Share2 } from 'lucide-react'
+import { Play, Sparkles, Users, Cat, BarChart3, MessageCircle, Heart, Share2 } from 'lucide-react'
 
 const features = [
   {
@@ -13,9 +13,9 @@ const features = [
     icon: Users,
   },
   {
-    name: 'E-Commerce Integration',
-    description: 'Seamless checkout experience with tiered pricing plans and secure payment processing.',
-    icon: ShoppingCart,
+    name: 'Cat Video Studio',
+    description: 'Fill a simple brief with your brand assets and product details, then generate a cat-led marketing video end-to-end.',
+    icon: Cat,
   },
   {
     name: 'Analytics Dashboard',
@@ -73,8 +73,8 @@ const sampleVideos = [
 
 export default function Home() {
   return (
-    <div className="bg-white">
-      <section className="relative overflow-hidden bg-gradient-to-br from-primary/5 via-white to-accent/5">
+    <div className="bg-base">
+      <section className="relative overflow-hidden bg-gradient-to-br from-primary/20 via-base to-accent/20">
         <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
           <div className="text-center">
             <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-6xl">
@@ -92,6 +92,12 @@ export default function Home() {
                 Start Creating Free
               </Link>
               <Link
+                to="/cat-video-studio"
+                className="text-sm font-semibold leading-6 text-gray-900 flex items-center gap-2"
+              >
+                Open Cat Video Studio <Sparkles className="h-4 w-4" />
+              </Link>
+              <Link
                 to="/gallery"
                 className="text-sm font-semibold leading-6 text-gray-900 flex items-center gap-2"
               >
@@ -101,25 +107,20 @@ export default function Home() {
           </div>
 
           <div className="mt-20">
-            <div className="relative rounded-3xl bg-gray-900 p-2 shadow-2xl">
-              <div className="absolute inset-0 bg-gradient-to-r from-primary to-accent opacity-20 blur-xl"></div>
-              <img
-                src="https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=1200&h=600&fit=crop"
-                alt="Cat mascot with products"
-                className="rounded-2xl w-full h-96 object-cover"
+            <div className="relative rounded-3xl bg-ink p-2 shadow-2xl">
+              <video
+                className="home-hero-video rounded-2xl w-full h-96 object-cover"
+                src="/PixVerse_V6_Extend_1080P_SHOT_1_—_THE_REVOLUTI%20(1).mp4"
+                controls
+                playsInline
+                preload="metadata"
               />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <button className="group flex items-center gap-3 rounded-full bg-white/95 px-8 py-4 shadow-lg hover:bg-white transition-all">
-                  <Play className="h-6 w-6 text-primary group-hover:scale-110 transition-transform" />
-                  <span className="text-lg font-semibold text-gray-900">Watch Demo Video</span>
-                </button>
-              </div>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="py-24 bg-white">
+      <section className="py-24 bg-cream/70">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
             {stats.map((stat) => (
@@ -132,7 +133,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="py-24 bg-gray-50">
+      <section className="py-24 bg-base">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="text-3xl font-bold tracking-tight text-gray-900">
@@ -146,7 +147,7 @@ export default function Home() {
             {features.map((feature) => (
               <div
                 key={feature.name}
-                className="relative rounded-2xl bg-white p-8 shadow-lg ring-1 ring-gray-900/5 hover:shadow-xl transition-shadow"
+                className="relative rounded-2xl bg-cream/80 p-8 shadow-lg ring-1 ring-ink/5 hover:shadow-xl transition-shadow"
               >
                 <feature.icon className="h-10 w-10 text-primary mb-4" />
                 <h3 className="text-lg font-semibold text-gray-900">{feature.name}</h3>
@@ -157,7 +158,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="py-24 bg-white">
+      <section className="py-24 bg-cream/70">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-2xl text-center mb-16">
             <h2 className="text-3xl font-bold tracking-tight text-gray-900">
@@ -227,16 +228,16 @@ export default function Home() {
               Get Started Free
             </Link>
             <Link
-              to="/pricing"
+              to="/cat-video-studio"
               className="text-sm font-semibold leading-6 text-white flex items-center gap-2"
             >
-              View Pricing Plans
+              Open Cat Video Studio <Sparkles className="h-4 w-4" />
             </Link>
           </div>
         </div>
       </section>
 
-      <section className="py-24 bg-white">
+      <section className="py-24 bg-cream/70">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-3xl">
             <h2 className="text-3xl font-bold text-center mb-12">How It Works</h2>

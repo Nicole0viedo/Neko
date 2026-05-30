@@ -103,6 +103,9 @@ SUPABASE_ANON_KEY=your-anon-key
 STRIPE_SECRET_KEY=sk_test_your_secret_key
 STRIPE_PUBLISHABLE_KEY=pk_test_your_publishable_key
 CLIENT_URL=http://localhost:3000
+PIXVERSE_API_KEY=your-pixverse-api-key
+ANTHROPIC_API_KEY=your-anthropic-api-key
+ANTHROPIC_MODEL=claude-3-5-sonnet-latest
 ```
 
 ### Database Setup (Supabase)

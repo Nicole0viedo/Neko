@@ -3,6 +3,7 @@ import cors from 'cors'
 import dotenv from 'dotenv'
 import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
+import multer from 'multer'
 import { v4 as uuidv4 } from 'uuid'
 
 dotenv.config()
@@ -25,6 +26,444 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_placeholder'
 const supabase = createClient(
   process.env.SUPABASE_URL || 'https://placeholder.supabase.co',
   process.env.SUPABASE_ANON_KEY || 'placeholder-key'
+)
+
+const catVideoJobs = new Map()
+const catVideoQueue = []
+const activeCatVideoWorkers = new Set()
+
+const rateLimitBuckets = new Map()
+
+function getClientIp(req) {
+  const forwarded = req.headers['x-forwarded-for']
+  if (typeof forwarded === 'string' && forwarded.length > 0) return forwarded.split(',')[0].trim()
+  return req.ip
+}
+
+function rateLimit({ keyPrefix, windowMs, max }) {
+  return (req, res, next) => {
+    const now = Date.now()
+    const ip = getClientIp(req) || 'unknown'
+    const key = `${keyPrefix}:${ip}`
+    const current = rateLimitBuckets.get(key)
+    if (!current || current.resetAt <= now) {
+      rateLimitBuckets.set(key, { count: 1, resetAt: now + windowMs })
+      next()
+      return
+    }
+
+    if (current.count >= max) {
+      res.status(429).json({
+        success: false,
+        error: 'Too many requests. Please wait a moment and try again.',
+      })
+      return
+    }
+
+    current.count += 1
+    next()
+  }
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+function normalizeHex(hex) {
+  if (typeof hex !== 'string') return ''
+  const trimmed = hex.trim()
+  const withHash = trimmed.startsWith('#') ? trimmed : `#${trimmed}`
+  return withHash.toUpperCase()
+}
+
+function isValidHex(hex) {
+  return /^#[0-9A-F]{6}$/.test(hex)
+}
+
+function sanitizeText(value, maxLen) {
+  if (typeof value !== 'string') return ''
+  const trimmed = value.trim()
+  if (!Number.isFinite(maxLen)) return trimmed
+  return trimmed.slice(0, maxLen)
+}
+
+async function anthropicDraftPrompt(input) {
+  const apiKey = process.env.ANTHROPIC_API_KEY || process.env.LLM_API_KEY
+  const model = process.env.ANTHROPIC_MODEL || 'claude-3-5-sonnet-latest'
+  if (!apiKey) {
+    throw new Error('Missing LLM API key. Set ANTHROPIC_API_KEY (or LLM_API_KEY) on the server.')
+  }
+
+  const system = [
+    'You are a creative director. Turn the structured product inputs into ONE vivid, shot-by-shot video prompt for an AI video model.',
+    'The hero is a friendly, expressive cat marketing the product.',
+    "Weave in the product's name, key benefit, and brand colors as on-screen palette/mood.",
+    'Honor the requested tone, aspect ratio, and duration.',
+    'Describe camera movement, lighting, and a clear product "hero moment."',
+    'Output only JSON: { "prompt": string, "negativePrompt": string }.',
+  ].join(' ')
+
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+    },
+    body: JSON.stringify({
+      model,
+      max_tokens: 900,
+      temperature: 0.7,
+      system,
+      messages: [{ role: 'user', content: JSON.stringify(input) }],
+    }),
+  })
+
+  const data = await response.json().catch(() => null)
+  if (!response.ok) {
+    const msg = data?.error?.message || data?.message || 'LLM request failed.'
+    throw new Error(msg)
+  }
+
+  const text = Array.isArray(data?.content) ? data.content.map((c) => c?.text).filter(Boolean).join('\n') : ''
+  const trimmed = typeof text === 'string' ? text.trim() : ''
+
+  const extractJson = (value) => {
+    const start = value.indexOf('{')
+    const end = value.lastIndexOf('}')
+    if (start === -1 || end === -1 || end <= start) return null
+    const slice = value.slice(start, end + 1)
+    try {
+      return JSON.parse(slice)
+    } catch {
+      return null
+    }
+  }
+
+  let parsed = null
+  try {
+    parsed = JSON.parse(trimmed)
+  } catch {
+    parsed = extractJson(trimmed)
+  }
+
+  const prompt = sanitizeText(parsed?.prompt, 5000)
+  const negativePrompt = sanitizeText(parsed?.negativePrompt, 2000)
+
+  if (!prompt) throw new Error('LLM did not return a valid { prompt, negativePrompt } payload.')
+
+  return { prompt, negativePrompt }
+}
+
+async function pixverseFetch(path, { method = 'GET', headers = {}, body } = {}) {
+  const apiKey = process.env.PIXVERSE_API_KEY
+  if (!apiKey) throw new Error('Missing PIXVERSE_API_KEY on the server.')
+
+  const response = await fetch(`https://app-api.pixverse.ai/openapi/v2${path}`, {
+    method,
+    headers: {
+      'API-KEY': apiKey,
+      'Ai-trace-id': uuidv4(),
+      ...headers,
+    },
+    body,
+  })
+
+  const json = await response.json().catch(() => null)
+  if (!response.ok) {
+    throw new Error(json?.ErrMsg || `PixVerse request failed (${response.status}).`)
+  }
+  if (json?.ErrCode !== 0) {
+    throw new Error(json?.ErrMsg || 'PixVerse request failed.')
+  }
+  return json?.Resp
+}
+
+async function pixverseUploadImage(file) {
+  const formData = new FormData()
+  const blob = new Blob([file.buffer], { type: file.mimetype || 'application/octet-stream' })
+  formData.append('image', blob, file.originalname || 'image')
+  const resp = await pixverseFetch('/image/upload', { method: 'POST', body: formData })
+  return resp?.img_id
+}
+
+async function pixverseGenerateTextVideo({ prompt, negativePrompt, aspectRatio, duration, model, quality }) {
+  const resp = await pixverseFetch('/video/text/generate', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      aspect_ratio: aspectRatio,
+      duration,
+      model,
+      prompt,
+      negative_prompt: negativePrompt || '',
+      quality,
+      seed: Math.floor(Math.random() * 2147483647),
+    }),
+  })
+  return resp?.video_id
+}
+
+async function pixverseGenerateImageVideo({ imgId, prompt, negativePrompt, duration, model, quality }) {
+  const resp = await pixverseFetch('/video/img/generate', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      img_id: imgId,
+      duration,
+      model,
+      prompt,
+      negative_prompt: negativePrompt || '',
+      quality,
+      seed: Math.floor(Math.random() * 2147483647),
+    }),
+  })
+  return resp?.video_id
+}
+
+async function pixverseGetVideoResult(videoId) {
+  return pixverseFetch(`/video/result/${videoId}`, { method: 'GET' })
+}
+
+function setCatJob(jobId, patch) {
+  const current = catVideoJobs.get(jobId)
+  if (!current) return null
+  const next = { ...current, ...patch, updatedAt: new Date().toISOString() }
+  catVideoJobs.set(jobId, next)
+  return next
+}
+
+async function runCatVideoWorker(jobId) {
+  if (activeCatVideoWorkers.has(jobId)) return
+  activeCatVideoWorkers.add(jobId)
+
+  try {
+    const job = catVideoJobs.get(jobId)
+    if (!job) return
+
+    setCatJob(jobId, { status: 'drafting_prompt', stage: 'drafting_prompt', message: 'Drafting your prompt…' })
+    const { prompt, negativePrompt } = await anthropicDraftPrompt(job.input)
+    setCatJob(jobId, { prompt, negativePrompt })
+
+    let imgId = null
+    if (job.productImage) {
+      setCatJob(jobId, { status: 'uploading_assets', stage: 'uploading_assets', message: 'Uploading your product image…' })
+      imgId = await pixverseUploadImage(job.productImage)
+      setCatJob(jobId, { productImage: null })
+    }
+
+    setCatJob(jobId, { status: 'generating', stage: 'generating', message: 'Generating video (this can take a few minutes)…' })
+    const model = 'v6'
+    const quality = '720p'
+
+    const videoId = imgId
+      ? await pixverseGenerateImageVideo({
+          imgId,
+          prompt,
+          negativePrompt,
+          duration: job.input.duration,
+          model,
+          quality,
+        })
+      : await pixverseGenerateTextVideo({
+          prompt,
+          negativePrompt,
+          aspectRatio: job.input.aspectRatio,
+          duration: job.input.duration,
+          model,
+          quality,
+        })
+
+    if (!videoId && videoId !== 0) throw new Error('PixVerse did not return a video_id.')
+    setCatJob(jobId, { pixverseVideoId: videoId })
+
+    const startedAt = Date.now()
+    const timeoutMs = 6 * 60 * 1000
+
+    while (Date.now() - startedAt < timeoutMs) {
+      const result = await pixverseGetVideoResult(videoId)
+      const status = result?.status
+
+      if (status === 1 && result?.url) {
+        setCatJob(jobId, { status: 'done', stage: 'done', message: 'Ready!', videoUrl: result.url })
+        return
+      }
+
+      if (status === 7) {
+        throw new Error('PixVerse moderation blocked this request. Try adjusting the tone or product wording.')
+      }
+
+      if (status === 8) {
+        throw new Error('PixVerse generation failed. Try again with different inputs.')
+      }
+
+      const waitMs = 3000 + Math.floor(Math.random() * 2000)
+      await sleep(waitMs)
+    }
+
+    throw new Error('Timed out while waiting for PixVerse to finish. Please try again.')
+  } catch (error) {
+    setCatJob(jobId, {
+      status: 'error',
+      stage: 'error',
+      message: 'Generation failed.',
+      error: error?.message || 'Something went wrong.',
+    })
+  } finally {
+    activeCatVideoWorkers.delete(jobId)
+    startNextCatVideoJobs()
+  }
+}
+
+function startNextCatVideoJobs() {
+  const maxWorkers = 2
+  while (activeCatVideoWorkers.size < maxWorkers && catVideoQueue.length > 0) {
+    const nextJobId = catVideoQueue.shift()
+    if (!nextJobId) continue
+    runCatVideoWorker(nextJobId)
+  }
+}
+
+setInterval(() => {
+  const cutoff = Date.now() - 60 * 60 * 1000
+  for (const [id, job] of catVideoJobs.entries()) {
+    const updatedAt = Date.parse(job.updatedAt || job.createdAt || '')
+    if (Number.isFinite(updatedAt) && updatedAt < cutoff) catVideoJobs.delete(id)
+  }
+}, 10 * 60 * 1000)
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 10 * 1024 * 1024,
+    files: 4,
+  },
+  fileFilter: (_req, file, cb) => {
+    const ok = ['image/jpeg', 'image/png', 'image/webp'].includes(file.mimetype)
+    cb(ok ? null : new Error('Unsupported file type.'), ok)
+  },
+})
+
+app.post(
+  '/api/cat-video',
+  rateLimit({ keyPrefix: 'cat-video', windowMs: 60 * 1000, max: 6 }),
+  upload.fields([
+    { name: 'brandLogo', maxCount: 1 },
+    { name: 'productImages', maxCount: 3 },
+  ]),
+  async (req, res) => {
+    try {
+      const files = req.files || {}
+      const brandLogo = Array.isArray(files.brandLogo) ? files.brandLogo[0] : null
+      const productImages = Array.isArray(files.productImages) ? files.productImages : []
+
+      const productName = sanitizeText(req.body.productName, 120)
+      const oneLineDescription = sanitizeText(req.body.oneLineDescription, 240)
+      const keyBenefit = sanitizeText(req.body.keyBenefit, 240)
+      const targetAudience = sanitizeText(req.body.targetAudience, 240)
+      const callToAction = sanitizeText(req.body.callToAction, 240)
+      const tonePreset = sanitizeText(req.body.tonePreset, 40)
+      const toneText = sanitizeText(req.body.toneText, 400)
+      const aspectRatio = sanitizeText(req.body.aspectRatio, 20)
+      const duration = Number.parseInt(req.body.duration, 10)
+
+      let brandColors = []
+      try {
+        brandColors = JSON.parse(req.body.brandColors || '[]')
+      } catch {
+        brandColors = []
+      }
+      brandColors = Array.isArray(brandColors) ? brandColors.map(normalizeHex).filter(Boolean).slice(0, 3) : []
+
+      const errors = []
+      if (!brandLogo) errors.push('Brand logo is required.')
+      if (!productName) errors.push('Product name is required.')
+      if (!oneLineDescription) errors.push('One-line description is required.')
+      if (!keyBenefit) errors.push('Key benefit is required.')
+      if (!targetAudience) errors.push('Target audience is required.')
+      if (!callToAction) errors.push('Call-to-action is required.')
+      if (brandColors.length === 0) errors.push('At least one brand color is required.')
+      if (brandColors.some((c) => !isValidHex(c))) errors.push('Brand colors must be valid hex values.')
+      if (!['16:9', '9:16', '1:1'].includes(aspectRatio)) errors.push('Invalid aspect ratio.')
+      if (![5, 8].includes(duration)) errors.push('Invalid duration.')
+      if (productImages.length > 3) errors.push('Upload up to 3 product images.')
+
+      if (errors.length > 0) {
+        res.status(400).json({ success: false, error: errors[0] })
+        return
+      }
+
+      const input = {
+        productName,
+        oneLineDescription,
+        keyBenefit,
+        targetAudience,
+        callToAction,
+        tonePreset,
+        toneText,
+        aspectRatio,
+        duration,
+        brandColors,
+      }
+
+      const jobId = uuidv4()
+      const createdAt = new Date().toISOString()
+      catVideoJobs.set(jobId, {
+        id: jobId,
+        status: 'queued',
+        stage: 'queued',
+        message: 'Queued…',
+        createdAt,
+        updatedAt: createdAt,
+        input,
+        productImage: productImages[0] || null,
+      })
+
+      catVideoQueue.push(jobId)
+      startNextCatVideoJobs()
+
+      const created = catVideoJobs.get(jobId)
+      res.json({
+        success: true,
+        job: {
+          id: created.id,
+          status: created.status,
+          stage: created.stage,
+          message: created.message,
+          createdAt: created.createdAt,
+          updatedAt: created.updatedAt,
+        },
+      })
+    } catch (error) {
+      res.status(500).json({ success: false, error: error?.message || 'Failed to start generation.' })
+    }
+  }
+)
+
+app.get(
+  '/api/cat-video/:id',
+  rateLimit({ keyPrefix: 'cat-video-status', windowMs: 60 * 1000, max: 60 }),
+  (req, res) => {
+    const job = catVideoJobs.get(req.params.id)
+    if (!job) {
+      res.status(404).json({ success: false, error: 'Job not found.' })
+      return
+    }
+
+    res.json({
+      success: true,
+      job: {
+        id: job.id,
+        status: job.status,
+        stage: job.stage,
+        message: job.message,
+        videoUrl: job.videoUrl,
+        error: job.error,
+        createdAt: job.createdAt,
+        updatedAt: job.updatedAt,
+      },
+    })
+  }
 )
 
 app.post('/api/payments/create-checkout-session', async (req, res) => {

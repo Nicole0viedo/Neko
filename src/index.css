@@ -4,7 +4,7 @@
 
 @layer base {
   body {
-    @apply bg-white text-gray-900;
+    @apply bg-base text-ink;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
@@ -37,4 +37,8 @@
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.home-hero-video {
+  box-sizing: content-box;
 }
