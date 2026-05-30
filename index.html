@@ -1,0 +1,460 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/public/cat.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Create custom product advertising videos featuring your brand's unique cat mascot with AI-powered PixVerse technology" />
+    <title>Neko - Cat Mascot Advertising Platform</title>
+    <style>
+      :root {
+        --bg: #faf5ff;
+        --surface: #ffffff;
+        --text: #312244;
+        --muted: #c4f1d9;
+        --primary: #a78bfa;
+        --primary-dark: #9776f9;
+        --accent: #f687b3;
+        --border: #f8cfe8;
+        --shadow: 0 20px 40px rgba(239, 68, 68, 0.12);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: Arial, Helvetica, sans-serif;
+        color: var(--text);
+        background:
+          radial-gradient(circle at top left, rgba(251, 146, 60, 0.18), transparent 28%),
+          radial-gradient(circle at top right, rgba(239, 68, 68, 0.12), transparent 24%),
+          var(--bg);
+      }
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      .container {
+        width: min(1120px, calc(100% - 32px));
+        margin: 0 auto;
+      }
+
+      .nav {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        backdrop-filter: blur(12px);
+        background: rgba(255, 255, 255, 0.85);
+        border-bottom: 1px solid rgba(241, 215, 210, 0.9);
+      }
+
+      .nav-inner,
+      .hero,
+      .stats,
+      .cards,
+      .plans,
+      .footer {
+        display: grid;
+        gap: 24px;
+      }
+
+      .nav-inner {
+        grid-template-columns: 1fr auto;
+        align-items: center;
+        padding: 16px 0;
+      }
+
+      .brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 1.25rem;
+        font-weight: 700;
+      }
+
+      .brand img {
+        width: 40px;
+        height: 40px;
+      }
+
+      .links {
+        display: flex;
+        gap: 18px;
+        flex-wrap: wrap;
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+
+      .hero {
+        grid-template-columns: 1.2fr 1fr;
+        align-items: center;
+        padding: 72px 0 40px;
+      }
+
+      .eyebrow {
+        display: inline-block;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: rgba(239, 68, 68, 0.1);
+        color: var(--primary-dark);
+        font-size: 0.85rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+      }
+
+      h1 {
+        margin: 18px 0 16px;
+        font-size: clamp(2.4rem, 5vw, 4.6rem);
+        line-height: 1.05;
+      }
+
+      .hero p,
+      .section-copy {
+        color: var(--muted);
+        font-size: 1.05rem;
+        line-height: 1.7;
+      }
+
+      .cta-row {
+        display: flex;
+        gap: 14px;
+        flex-wrap: wrap;
+        margin-top: 28px;
+      }
+
+      .button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 48px;
+        padding: 0 18px;
+        border-radius: 14px;
+        font-weight: 700;
+        border: 1px solid transparent;
+      }
+
+      .button.primary {
+        background: linear-gradient(135deg, var(--primary), var(--accent));
+        color: #fff;
+        box-shadow: var(--shadow);
+      }
+
+      .button.secondary {
+        background: #fff;
+        border-color: var(--border);
+      }
+
+      .hero-card,
+      .card,
+      .plan {
+        background: var(--surface);
+        border: 1px solid rgba(241, 215, 210, 0.9);
+        border-radius: 24px;
+        box-shadow: var(--shadow);
+      }
+
+      .hero-card {
+        padding: 28px;
+      }
+
+      .video-preview {
+        border-radius: 18px;
+        padding: 24px;
+        min-height: 320px;
+        background: linear-gradient(160deg, #2a1f2b, #0f172a);
+        color: #fff;
+        display: grid;
+        align-content: space-between;
+      }
+
+      .play {
+        width: 84px;
+        height: 84px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        background: rgba(255, 255, 255, 0.92);
+        color: var(--primary);
+        margin: 0 auto;
+        font-size: 1.6rem;
+        font-weight: 700;
+      }
+
+      .preview-meta {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 0.92rem;
+      }
+
+      .section {
+        padding: 28px 0 20px;
+      }
+
+      .section h2 {
+        margin: 0 0 10px;
+        font-size: clamp(1.8rem, 3vw, 2.8rem);
+      }
+
+      .stats {
+        grid-template-columns: repeat(4, 1fr);
+        margin: 10px 0 26px;
+      }
+
+      .stat {
+        padding: 24px;
+        background: rgba(255, 255, 255, 0.75);
+        border: 1px solid rgba(241, 215, 210, 0.9);
+        border-radius: 22px;
+        text-align: center;
+      }
+
+      .stat strong {
+        display: block;
+        font-size: 1.9rem;
+        color: var(--primary-dark);
+      }
+
+      .cards {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .card,
+      .plan {
+        padding: 24px;
+      }
+
+      .card h3,
+      .plan h3 {
+        margin: 0 0 10px;
+      }
+
+      .tag {
+        display: inline-block;
+        margin-bottom: 14px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: rgba(239, 68, 68, 0.1);
+        color: var(--primary-dark);
+        font-size: 0.8rem;
+        font-weight: 700;
+      }
+
+      .plans {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .price {
+        margin: 12px 0 16px;
+        font-size: 2.4rem;
+        font-weight: 800;
+      }
+
+      ul {
+        margin: 0;
+        padding-left: 18px;
+        color: var(--muted);
+        line-height: 1.8;
+      }
+
+      .footer {
+        padding: 40px 0 64px;
+        color: var(--muted);
+        text-align: center;
+      }
+
+      @media (max-width: 900px) {
+        .hero,
+        .stats,
+        .cards,
+        .plans {
+          grid-template-columns: 1fr;
+        }
+
+        .nav-inner {
+          grid-template-columns: 1fr;
+        }
+
+        .links {
+          justify-content: flex-start;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="nav">
+      <div class="container nav-inner">
+        <a class="brand" href="#top">
+          <img src="/public/cat.svg" alt="Neko cat mascot" />
+          <span>Neko</span>
+        </a>
+        <nav class="links">
+          <a href="#features">Features</a>
+          <a href="#gallery">Gallery</a>
+          <a href="#pricing">Pricing</a>
+          <a href="#launch">Launch</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="top" class="container">
+      <section class="hero">
+        <div>
+          <span class="eyebrow">Hackathon Ready Marketing Platform</span>
+          <h1>Cat Mascot Ads That Brands Actually Want to Run</h1>
+          <p>
+            Neko helps brands turn product details into polished mascot-led ad concepts, gallery-ready campaigns, and
+            conversion-focused creative built around PixVerse video output.
+          </p>
+          <div class="cta-row">
+            <a class="button primary" href="#pricing">View Pricing</a>
+            <a class="button secondary" href="#gallery">See Sample Campaigns</a>
+          </div>
+        </div>
+
+        <aside class="hero-card">
+          <div class="video-preview">
+            <div>
+              <span class="tag">PixVerse Concept Preview</span>
+              <h3>Glow Naturals x Neko</h3>
+              <p style="color: rgba(255,255,255,0.8); line-height: 1.7;">
+                A 35 second lifestyle ad where the mascot introduces a skincare routine, highlights product benefits,
+                and closes with a branded social CTA.
+              </p>
+            </div>
+            <div class="play">Play</div>
+            <div class="preview-meta">
+              <span>35s video flow</span>
+              <span>Brand-safe concept</span>
+              <span>Social-ready output</span>
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <section class="section">
+        <div class="stats">
+          <div class="stat">
+            <strong>150+</strong>
+            <span>active brands</span>
+          </div>
+          <div class="stat">
+            <strong>2.5k+</strong>
+            <span>campaign drafts</span>
+          </div>
+          <div class="stat">
+            <strong>68%</strong>
+            <span>avg. engagement</span>
+          </div>
+          <div class="stat">
+            <strong>35s+</strong>
+            <span>video duration target</span>
+          </div>
+        </div>
+      </section>
+
+      <section id="features" class="section">
+        <h2>Core Features</h2>
+        <p class="section-copy">
+          This fallback page mirrors the product direction while remaining directly openable without a Node-based build.
+        </p>
+        <div class="cards">
+          <article class="card">
+            <span class="tag">Onboarding</span>
+            <h3>Brand Intake Flow</h3>
+            <p class="section-copy">Collect product details, creative direction, mascot style, and campaign goals in one guided flow.</p>
+          </article>
+          <article class="card">
+            <span class="tag">Commerce</span>
+            <h3>Paid Video Packages</h3>
+            <p class="section-copy">Offer Basic, Professional, and Enterprise plans with clear deliverables and checkout steps.</p>
+          </article>
+          <article class="card">
+            <span class="tag">Engagement</span>
+            <h3>Gallery + Feedback</h3>
+            <p class="section-copy">Showcase approved ads with likes, comments, and social sharing hooks for judges and customers.</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="gallery" class="section">
+        <h2>Sample Campaign Ideas</h2>
+        <div class="cards">
+          <article class="card">
+            <span class="tag">Beauty</span>
+            <h3>Glow Naturals Serum</h3>
+            <p class="section-copy">Soft studio lighting, trustworthy mascot narration, morning routine framing.</p>
+          </article>
+          <article class="card">
+            <span class="tag">Electronics</span>
+            <h3>PowerUp Charger Pro</h3>
+            <p class="section-copy">Fast-paced retail demo, sleek product closeups, energetic mascot product testing.</p>
+          </article>
+          <article class="card">
+            <span class="tag">Food</span>
+            <h3>Crunch Co. Snacks</h3>
+            <p class="section-copy">Playful mascot personality, punchy copy, community-vote-ready social ad concept.</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="pricing" class="section">
+        <h2>Pricing Snapshot</h2>
+        <div class="plans">
+          <article class="plan">
+            <span class="tag">Basic</span>
+            <h3>Starter Launch</h3>
+            <div class="price">$49</div>
+            <ul>
+              <li>1 custom concept video</li>
+              <li>HD delivery target</li>
+              <li>2 revision rounds</li>
+            </ul>
+          </article>
+          <article class="plan">
+            <span class="tag">Professional</span>
+            <h3>Growth Package</h3>
+            <div class="price">$149</div>
+            <ul>
+              <li>3 custom concept videos</li>
+              <li>4K delivery target</li>
+              <li>5 revision rounds</li>
+            </ul>
+          </article>
+          <article class="plan">
+            <span class="tag">Enterprise</span>
+            <h3>Scale Campaigns</h3>
+            <div class="price">$499</div>
+            <ul>
+              <li>Unlimited campaign generation</li>
+              <li>Dedicated support flow</li>
+              <li>Custom creative direction</li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <section id="launch" class="section">
+        <div class="card">
+          <h2>Environment Fix Applied</h2>
+          <p class="section-copy">
+            The local terminal wrapper was repaired, and this page now runs as a direct static fallback so it can be served and previewed even without Node.js installed.
+          </p>
+          <div class="cta-row">
+            <a class="button primary" href="#top">Back to Top</a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="container footer">
+      <p>Neko fallback preview page</p>
+      <p>Powered by a static HTTP server workaround in this environment</p>
+    </footer>
+  </body>
+</html>
