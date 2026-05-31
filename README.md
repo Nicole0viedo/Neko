@@ -293,10 +293,6 @@ This is a hackathon project. For production use, consider:
 - Setting up CI/CD
 - Adding comprehensive tests
 
-## License
-
-MIT License - See LICENSE file for details
-
 ## Acknowledgments
 
 - PixVerse for AI video generation technology
